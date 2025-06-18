@@ -3,6 +3,7 @@ openai==1.51.0
 yt-dlp==2025.6.9
 requests==2.31.0
 python-dotenv==1.0.0
+google-search-results==2.4.2
 httpx==0.27.0
 faster-whisper>=1.1.0
 # Speaker diarization dependencies - Optional for Python 3.13

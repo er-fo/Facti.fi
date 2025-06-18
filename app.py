@@ -17,19 +17,13 @@ import queue
 
 # Web research imports
 try:
-    # Remove the broken DuckDuckGo import
-    # from duckduckgo_search import DDGS
-    # WEB_SEARCH_AVAILABLE = True
-    # logging.getLogger('app').info("DuckDuckGo web search available")
-    
-    # ContextualWeb Search API is always available via requests library
-    import requests
+    from serpapi import GoogleSearch
     WEB_SEARCH_AVAILABLE = True
-    logging.getLogger('app').info("ContextualWeb Search API available")
+    logging.getLogger('app').info("SerpAPI web search available")
 except ImportError as e:
     WEB_SEARCH_AVAILABLE = False
-    logging.getLogger('app').warning(f"ContextualWeb Search API not available: {e}")
-    logging.getLogger('app').info("Web research will fall back to AI-only analysis")
+    logging.getLogger('app').warning(f"SerpAPI web search not available: {e}")
+    logging.getLogger('app').info("Install 'google-search-results' package to enable real web research")
 
 # Speaker diarization imports - Updated for compatibility
 DIARIZATION_AVAILABLE = False
@@ -91,6 +85,76 @@ results_store = {}  # Add results storage
 
 # Global request tracking persistence file path
 REQUEST_TRACKING_FILE = "request_tracking.json"
+
+# SerpAPI configuration and usage tracking
+SERPAPI_USAGE_FILE = "serpapi_usage.json"
+
+def load_serpapi_usage():
+    """Load SerpAPI usage tracking data"""
+    try:
+        if os.path.exists(SERPAPI_USAGE_FILE):
+            with open(SERPAPI_USAGE_FILE, 'r') as f:
+                return json.load(f)
+        else:
+            return {"daily_usage": {}, "monthly_usage": {}}
+    except Exception as e:
+        app_logger.warning(f"Failed to load SerpAPI usage data: {e}")
+        return {"daily_usage": {}, "monthly_usage": {}}
+
+def save_serpapi_usage(usage_data):
+    """Save SerpAPI usage tracking data"""
+    try:
+        with open(SERPAPI_USAGE_FILE, 'w') as f:
+            json.dump(usage_data, f, indent=2)
+    except Exception as e:
+        app_logger.warning(f"Failed to save SerpAPI usage data: {e}")
+
+def check_serpapi_quota():
+    """Check if we're within SerpAPI quota limits"""
+    usage_data = load_serpapi_usage()
+    current_date = datetime.now().strftime("%Y-%m-%d")
+    current_month = datetime.now().strftime("%Y-%m")
+    
+    daily_limit = int(os.getenv("SERPAPI_DAILY_LIMIT", "10"))  # Conservative daily limit
+    monthly_limit = int(os.getenv("SERPAPI_MONTHLY_LIMIT", "90"))  # Leave some buffer from 100/month
+    
+    daily_usage = usage_data.get("daily_usage", {}).get(current_date, 0)
+    monthly_usage = usage_data.get("monthly_usage", {}).get(current_month, 0)
+    
+    if daily_usage >= daily_limit:
+        return False, f"Daily quota exceeded ({daily_usage}/{daily_limit})"
+    if monthly_usage >= monthly_limit:
+        return False, f"Monthly quota exceeded ({monthly_usage}/{monthly_limit})"
+    
+    return True, f"Quota OK (Daily: {daily_usage}/{daily_limit}, Monthly: {monthly_usage}/{monthly_limit})"
+
+def increment_serpapi_usage():
+    """Increment SerpAPI usage counters"""
+    usage_data = load_serpapi_usage()
+    current_date = datetime.now().strftime("%Y-%m-%d")
+    current_month = datetime.now().strftime("%Y-%m")
+    
+    # Increment daily usage
+    if "daily_usage" not in usage_data:
+        usage_data["daily_usage"] = {}
+    usage_data["daily_usage"][current_date] = usage_data["daily_usage"].get(current_date, 0) + 1
+    
+    # Increment monthly usage
+    if "monthly_usage" not in usage_data:
+        usage_data["monthly_usage"] = {}
+    usage_data["monthly_usage"][current_month] = usage_data["monthly_usage"].get(current_month, 0) + 1
+    
+    save_serpapi_usage(usage_data)
+    
+    # Clean up old daily data (keep only last 7 days)
+    cutoff_date = (datetime.now() - timedelta(days=7)).strftime("%Y-%m-%d")
+    usage_data["daily_usage"] = {k: v for k, v in usage_data["daily_usage"].items() if k >= cutoff_date}
+    
+    # Clean up old monthly data (keep only last 3 months)
+    cutoff_month = (datetime.now() - timedelta(days=90)).strftime("%Y-%m")
+    usage_data["monthly_usage"] = {k: v for k, v in usage_data["monthly_usage"].items() if k >= cutoff_month}
+    
+    save_serpapi_usage(usage_data)
 
 def load_request_tracking():
     """Load request tracking data from file to persist across restarts"""
@@ -174,16 +238,6 @@ class TruthScoreAnalyzer:
         # Default to the lightweight "o3-mini" model, but allow override via environment variable
         self.model_name = os.getenv("TRUTHSCORE_MODEL", "o3-mini")
         self.current_request_id = None
-        self.api_timeout = 60  # 1 minute timeout for AI API calls
-        
-        # ContextualWeb Search API configuration
-        self.contextual_web_api_key = os.getenv("CONTEXTUAL_WEB_API_KEY", "")
-        self.contextual_web_quota_limit = int(os.getenv("CONTEXTUAL_WEB_QUOTA_LIMIT", "90"))  # Leave buffer from 100 free limit
-        self.contextual_web_timeout = int(os.getenv("CONTEXTUAL_WEB_TIMEOUT", "15"))  # 15 second timeout for web searches
-        
-        # Load and initialize web search quota tracking
-        self.quota_tracking_file = "web_search_quota.json"
-        self.web_search_quota = self._load_web_search_quota()
         
         # Speaker identification knowledge base
         self.speaker_patterns = {
@@ -339,138 +393,6 @@ class TruthScoreAnalyzer:
         except Exception as e:
             self.logger.warning(f"Error validating URL '{url}': {e}")
             return False
-    
-    def _load_web_search_quota(self):
-        """Load web search quota tracking from file"""
-        try:
-            if os.path.exists(self.quota_tracking_file):
-                with open(self.quota_tracking_file, 'r') as f:
-                    data = json.load(f)
-                    # Reset quota if it's a new day
-                    today = datetime.now().strftime('%Y-%m-%d')
-                    if data.get('date') != today:
-                        self.logger.info(f"New day detected, resetting web search quota")
-                        return {'date': today, 'used': 0, 'remaining': self.contextual_web_quota_limit}
-                    
-                    # Ensure remaining count is accurate
-                    used = data.get('used', 0)
-                    remaining = max(0, self.contextual_web_quota_limit - used)
-                    self.logger.info(f"Loaded web search quota: {used} used, {remaining} remaining")
-                    return {'date': today, 'used': used, 'remaining': remaining}
-            else:
-                today = datetime.now().strftime('%Y-%m-%d')
-                self.logger.info(f"No quota file found, starting with fresh quota")
-                return {'date': today, 'used': 0, 'remaining': self.contextual_web_quota_limit}
-        except Exception as e:
-            self.logger.warning(f"Failed to load web search quota: {e}")
-            today = datetime.now().strftime('%Y-%m-%d')
-            return {'date': today, 'used': 0, 'remaining': self.contextual_web_quota_limit}
-    
-    def _save_web_search_quota(self):
-        """Save web search quota tracking to file"""
-        try:
-            with open(self.quota_tracking_file, 'w') as f:
-                json.dump(self.web_search_quota, f, indent=2)
-        except Exception as e:
-            self.logger.warning(f"Failed to save web search quota: {e}")
-    
-    def _use_web_search_quota(self, amount=1):
-        """Use web search quota and update tracking"""
-        if self.web_search_quota['remaining'] >= amount:
-            self.web_search_quota['used'] += amount
-            self.web_search_quota['remaining'] -= amount
-            self._save_web_search_quota()
-            self.logger.info(f"Used {amount} web search quota. Remaining: {self.web_search_quota['remaining']}")
-            return True
-        else:
-            self.logger.warning(f"Insufficient web search quota. Requested: {amount}, Remaining: {self.web_search_quota['remaining']}")
-            return False
-    
-    def _check_web_search_availability(self):
-        """Check if web search is available (API key and quota)"""
-        if not self.contextual_web_api_key:
-            self.logger.warning("ContextualWeb API key not configured")
-            return False, "API key not configured"
-        
-        if not WEB_SEARCH_AVAILABLE:
-            return False, "Web search API not available"
-            
-        if self.web_search_quota['remaining'] <= 0:
-            return False, f"Daily quota exhausted ({self.web_search_quota['used']}/{self.contextual_web_quota_limit})"
-        
-        return True, f"Available ({self.web_search_quota['remaining']} requests remaining)"
-    
-    def _search_contextual_web(self, query):
-        """Search using ContextualWeb Search API"""
-        try:
-            url = "https://contextualwebsearch-websearch-v1.p.rapidapi.com/api/Search/WebSearchAPI"
-            
-            headers = {
-                'x-rapidapi-key': self.contextual_web_api_key,
-                'x-rapidapi-host': 'contextualwebsearch-websearch-v1.p.rapidapi.com'
-            }
-            
-            params = {
-                'q': query,
-                'pageNumber': '1',
-                'pageSize': '5',  # Limit to 5 results per query
-                'autoCorrect': 'true'
-            }
-            
-            self.logger.info(f"Searching ContextualWeb API for: {query[:50]}...")
-            
-            response = requests.get(
-                url, 
-                headers=headers, 
-                params=params, 
-                timeout=self.contextual_web_timeout
-            )
-            
-            if response.status_code == 200:
-                data = response.json()
-                web_pages = data.get('value', [])
-                
-                # Convert to our expected format
-                search_results = []
-                for page in web_pages:
-                    result = {
-                        'title': page.get('title', 'No title'),
-                        'body': page.get('snippet', 'No content'),  # Map 'snippet' to 'body'
-                        'href': page.get('url', 'No URL'),  # Map 'url' to 'href'
-                        'displayUrl': page.get('displayUrl', ''),
-                        'datePublished': page.get('datePublished', ''),
-                        'language': page.get('language', 'en')
-                    }
-                    search_results.append(result)
-                
-                self.logger.info(f"ContextualWeb API returned {len(search_results)} results for query: {query[:50]}...")
-                return search_results
-                
-            elif response.status_code == 429:
-                self.logger.error(f"ContextualWeb API rate limit exceeded: {response.status_code}")
-                raise Exception(f"Rate limit exceeded: {response.status_code}")
-            elif response.status_code == 401:
-                self.logger.error(f"ContextualWeb API authentication failed - check API key: {response.status_code}")
-                raise Exception(f"Authentication failed - check API key: {response.status_code}")
-            elif response.status_code == 403:
-                self.logger.error(f"ContextualWeb API access forbidden - check subscription: {response.status_code}")
-                raise Exception(f"Access forbidden - check subscription: {response.status_code}")
-            else:
-                self.logger.error(f"ContextualWeb API error: {response.status_code} - {response.text}")
-                raise Exception(f"API error: {response.status_code}")
-                
-        except requests.exceptions.Timeout:
-            self.logger.error(f"ContextualWeb API timeout after {self.contextual_web_timeout}s for query: {query[:50]}...")
-            raise Exception(f"Search timeout after {self.contextual_web_timeout}s")
-        except requests.exceptions.RequestException as e:
-            self.logger.error(f"ContextualWeb API request failed for query '{query[:50]}...': {e}")
-            raise Exception(f"Request failed: {str(e)}")
-        except json.JSONDecodeError as e:
-            self.logger.error(f"ContextualWeb API returned invalid JSON for query '{query[:50]}...': {e}")
-            raise Exception(f"Invalid JSON response: {str(e)}")
-        except Exception as e:
-            self.logger.error(f"ContextualWeb API search failed for query '{query[:50]}...': {e}")
-            raise
     
     def extract_audio(self, url):
         """Extract audio from video/speech content using yt-dlp"""
@@ -963,19 +885,29 @@ class TruthScoreAnalyzer:
             return None
     
     def perform_web_research(self, claims):
-        """Perform comprehensive web research on claims using ContextualWeb Search API with AI analysis"""
+        """Perform comprehensive web research on claims using SerpAPI Google Search with AI analysis"""
         self.logger.info(f"Starting real web research for {len(claims)} claims")
         
-        # Check web search availability
-        available, message = self._check_web_search_availability()
-        if not available:
-            self.logger.warning(f"Web search not available: {message}. Falling back to AI-only analysis")
+        if not WEB_SEARCH_AVAILABLE:
+            self.logger.warning("SerpAPI search not available, falling back to AI-only analysis")
             return self._perform_ai_only_research(claims)
         
-        self.logger.info(f"Web search available: {message}")
+        # Check API key availability
+        serpapi_key = os.getenv("SERPAPI_KEY")
+        if not serpapi_key:
+            self.logger.warning("SERPAPI_KEY not found in environment variables, falling back to AI-only analysis")
+            return self._perform_ai_only_research(claims)
+        
+        # Check quota before proceeding
+        quota_ok, quota_message = check_serpapi_quota()
+        if not quota_ok:
+            self.logger.warning(f"SerpAPI quota exceeded: {quota_message}, falling back to AI-only analysis")
+            return self._perform_ai_only_research(claims)
+        
+        self.logger.info(f"SerpAPI quota status: {quota_message}")
         
         research_results = []
-        claims_to_research = claims[:3]  # Limit to first 3 claims for performance
+        claims_to_research = claims[:2]  # Limit to first 2 claims to conserve quota
         
         self.logger.info(f"Processing {len(claims_to_research)} claims for web research")
         
@@ -993,56 +925,81 @@ class TruthScoreAnalyzer:
             
             try:
                 # Step 1: Generate search queries for the claim
-                self.set_progress("research", (i-1)*33, f"Generating search queries for claim {i}...")
+                self.set_progress("research", (i-1)*50, f"Generating search queries for claim {i}...")
                 
                 search_queries = self._generate_search_queries(claim_text)
+                # Limit to 2 queries per claim to conserve quota
+                search_queries = search_queries[:2]
                 self.logger.info(f"Generated {len(search_queries)} search queries for claim {i}")
                 
-                # Step 2: Perform web searches using ContextualWeb API
-                self.set_progress("research", (i-1)*33 + 10, f"Searching web for evidence on claim {i}...")
+                # Step 2: Perform web searches with SerpAPI
+                self.set_progress("research", (i-1)*50 + 15, f"Searching web for evidence on claim {i}...")
                 
                 search_results = []
-                queries_used = 0
-                
-                for query in search_queries:
-                    # Check quota before each search
-                    if not self._use_web_search_quota(1):
-                        self.logger.warning(f"Quota exhausted, skipping remaining queries for claim {i}")
-                        break
-                    
+                for j, query in enumerate(search_queries):
                     try:
-                        # Search using ContextualWeb API
-                        query_results = self._search_contextual_web(query)
-                        if query_results:
-                            search_results.extend(query_results)
-                            queries_used += 1
-                            self.logger.info(f"Found {len(query_results)} results for query: {query[:50]}...")
-                        else:
-                            self.logger.warning(f"No results found for query: {query[:50]}...")
-                            
-                        # Add delay between requests to be respectful to the API
-                        import time
-                        time.sleep(0.5)  # 500ms delay between requests
+                        # Check quota before each search
+                        quota_ok, quota_message = check_serpapi_quota()
+                        if not quota_ok:
+                            self.logger.warning(f"SerpAPI quota exceeded during search: {quota_message}")
+                            break
+                        
+                        # Rate limiting: wait between requests
+                        if j > 0:  # Don't wait before first search
+                            import time
+                            delay = float(os.getenv("SERPAPI_DELAY_SECONDS", "1.5"))
+                            time.sleep(delay)
+                        
+                        # Perform SerpAPI search
+                        search_params = {
+                            "q": query,
+                            "api_key": serpapi_key,
+                            "engine": "google",
+                            "num": 3,  # Limit results per query
+                            "safe": "active",
+                            "hl": "en",
+                            "gl": "us"
+                        }
+                        
+                        search = GoogleSearch(search_params)
+                        search_data = search.get_dict()
+                        
+                        # Increment usage counter
+                        increment_serpapi_usage()
+                        
+                        # Extract organic results
+                        organic_results = search_data.get("organic_results", [])
+                        
+                        for result in organic_results:
+                            search_results.append({
+                                'title': result.get('title', 'No title'),
+                                'body': result.get('snippet', 'No content'),
+                                'href': result.get('link', 'No URL'),
+                                'position': result.get('position', 0),
+                                'source': self._extract_domain(result.get('link', ''))
+                            })
+                        
+                        self.logger.info(f"Found {len(organic_results)} results for query: {query[:50]}...")
                         
                     except Exception as search_error:
-                        self.logger.warning(f"Search failed for query '{query[:50]}...': {search_error}")
+                        self.error_logger.error(f"SerpAPI search failed for query '{query[:50]}...': {search_error}")
                         continue
                 
                 # Step 3: Analyze web results with AI
-                self.set_progress("research", (i-1)*33 + 20, f"Analyzing web evidence for claim {i}...")
+                self.set_progress("research", (i-1)*50 + 35, f"Analyzing web evidence for claim {i}...")
                 
                 if search_results:
                     research_result = self._analyze_web_results(claim_text, search_results)
                     research_result['web_sources_found'] = len(search_results)
-                    research_result['search_queries_used'] = search_queries[:queries_used]  # Only successful queries
-                    research_result['quota_used'] = queries_used
+                    research_result['search_queries_used'] = search_queries
+                    research_result['research_method'] = 'SerpAPI Google Search + AI analysis'
                 else:
                     # No web results found, fallback to AI-only analysis
                     self.logger.warning(f"No web results found for claim {i}, using AI-only analysis")
                     research_result = self._perform_single_ai_research(claim_text)
                     research_result['web_sources_found'] = 0
                     research_result['search_queries_used'] = search_queries
-                    research_result['quota_used'] = queries_used
+                    research_result['research_method'] = 'AI-only analysis (no web results)'
                 
                 research_results.append(research_result)
                 
@@ -1050,42 +1007,45 @@ class TruthScoreAnalyzer:
                 verification_status = research_result.get('verification_status', 'UNKNOWN')
                 truthfulness_score = research_result.get('truthfulness_score', 0)
                 sources_count = research_result.get('web_sources_found', 0)
+                research_method = research_result.get('research_method', 'Unknown')
                 
                 self.logger.info(f"Web research completed for claim {i}: {verification_status} "
-                               f"(Score: {truthfulness_score}/100, Sources: {sources_count}, Quota used: {queries_used})")
+                               f"(Score: {truthfulness_score}/100, Sources: {sources_count}, Method: {research_method})")
                 
             except Exception as e:
                 self.error_logger.error(f"Web research failed for claim {i}: {e}")
                 research_results.append(self._create_fallback_research_result(claim_text, f"Web research error: {str(e)}"))
         
-        remaining_quota = self.web_search_quota['remaining']
-        self.logger.info(f"Real web research completed for {len(research_results)} claims. Remaining quota: {remaining_quota}")
+        # Log final quota status
+        final_quota_ok, final_quota_message = check_serpapi_quota()
+        self.logger.info(f"Final SerpAPI quota status: {final_quota_message}")
+        
+        self.logger.info(f"Real web research completed for {len(research_results)} claims using SerpAPI")
         return research_results
     
     def _generate_search_queries(self, claim_text):
         """Generate effective search queries for fact-checking a claim"""
         try:
             query_prompt = f"""
-            Generate 2-3 specific, effective search queries to fact-check this claim:
+            Generate 2 specific, effective search queries to fact-check this claim:
             
             CLAIM: "{claim_text}"
             
             Return ONLY a JSON array of search query strings, like:
-            ["search query 1", "search query 2", "search query 3"]
+            ["search query 1", "search query 2"]
             
             Make queries:
             - Specific and factual
             - Include key names, dates, locations mentioned
             - Focus on verifiable facts
             - Avoid opinion-based terms
+            - Keep queries concise (under 50 characters each)
             """
             
-            try:
-                response = self._call_openai_with_timeout([{"role": "user", "content": query_prompt}])
-            except (TimeoutError, Exception) as e:
-                self.logger.warning(f"Search query generation timed out or failed: {e}")
-                # Fallback: use claim text directly
-                return [claim_text[:100]]
+            response = client.chat.completions.create(
+                model=self.model_name,
+                messages=[{"role": "user", "content": query_prompt}]
+            )
             
             response_text = response.choices[0].message.content
             
@@ -1094,15 +1054,16 @@ class TruthScoreAnalyzer:
             if json_match:
                 queries = json.loads(json_match.group())
                 if isinstance(queries, list):
-                    return [str(q) for q in queries[:3]]  # Limit to 3 queries
+                    # Limit to 2 queries and truncate long ones
+                    return [str(q)[:100] for q in queries[:2]]
             
             # Fallback: create simple queries from claim
-            return [claim_text[:100]]  # Truncate long claims
+            return [claim_text[:80]]  # Truncate long claims
             
         except Exception as e:
             self.logger.warning(f"Failed to generate search queries: {e}")
             # Fallback: use claim text directly
-            return [claim_text[:100]]
+            return [claim_text[:80]]
     
     def _analyze_web_results(self, claim_text, search_results):
         """Analyze web search results to assess claim truthfulness"""
@@ -1112,11 +1073,9 @@ class TruthScoreAnalyzer:
             for result in search_results[:10]:  # Limit to top 10 results
                 evidence_item = {
                     'title': result.get('title', 'No title'),
-                    'snippet': result.get('body', result.get('snippet', 'No content')),  # Support both formats
-                    'url': result.get('href', result.get('url', 'No URL')),  # Support both formats
-                    'source': self._extract_domain(result.get('href', result.get('url', ''))),
-                    'date_published': result.get('datePublished', ''),
-                    'language': result.get('language', 'en')
+                    'snippet': result.get('body', 'No content'),
+                    'url': result.get('href', 'No URL'),
+                    'source': self._extract_domain(result.get('href', ''))
                 }
                 web_evidence.append(evidence_item)
             
@@ -1146,14 +1105,10 @@ class TruthScoreAnalyzer:
             Focus on information from the web results provided. Be objective and cite specific sources.
             """
             
-            try:
-                response = self._call_openai_with_timeout([{"role": "user", "content": analysis_prompt}])
-            except TimeoutError as e:
-                self.error_logger.error(f"Web analysis timed out after {self.api_timeout}s")
-                return self._create_fallback_research_result(claim_text, f"Web analysis timed out after {self.api_timeout} seconds")
-            except Exception as e:
-                self.error_logger.error(f"Web analysis API call failed: {e}")
-                return self._create_fallback_research_result(claim_text, f"Web analysis failed: {str(e)}")
+            response = client.chat.completions.create(
+                model=self.model_name,
+                messages=[{"role": "user", "content": analysis_prompt}]
+            )
             
             analysis_text = response.choices[0].message.content
             
@@ -1165,9 +1120,10 @@ class TruthScoreAnalyzer:
                 # Add web research metadata
                 analysis.update({
                     'claim': claim_text,
-                    'research_method': 'Web search + AI analysis',
+                    'research_method': 'SerpAPI Google Search + AI analysis',
                     'confidence_level': self._calculate_confidence_level(analysis),
-                    'web_sources': [result.get('href', '') for result in search_results[:5]]
+                    'web_sources': [result.get('href', '') for result in search_results[:5]],
+                    'search_result_positions': [result.get('position', 0) for result in search_results[:5]]
                 })
                 
                 # Create human-readable status message
@@ -1214,7 +1170,8 @@ class TruthScoreAnalyzer:
                 claim_text = str(claim)
             
             research_result = self._perform_single_ai_research(claim_text)
-            # Note: _perform_single_ai_research now includes web_sources_found, search_queries_used, and quota_used
+            research_result['web_sources_found'] = 0
+            research_result['search_queries_used'] = []
             research_results.append(research_result)
         
         return research_results
@@ -1243,14 +1200,10 @@ class TruthScoreAnalyzer:
             Note: This analysis is based on training data only, not current web search.
             """
             
-            try:
-                response = self._call_openai_with_timeout([{"role": "user", "content": research_prompt}])
-            except TimeoutError as e:
-                self.error_logger.error(f"AI research timed out after {self.api_timeout}s")
-                return self._create_fallback_research_result(claim_text, f"AI research timed out after {self.api_timeout} seconds")
-            except Exception as e:
-                self.error_logger.error(f"AI research API call failed: {e}")
-                return self._create_fallback_research_result(claim_text, f"AI research failed: {str(e)}")
+            response = client.chat.completions.create(
+                model=self.model_name,
+                messages=[{"role": "user", "content": research_prompt}]
+            )
             
             research_text = response.choices[0].message.content
             json_match = re.search(r'\{.*\}', research_text, re.DOTALL)
@@ -1260,10 +1213,7 @@ class TruthScoreAnalyzer:
                 analysis.update({
                     'claim': claim_text,
                     'research_method': 'AI-only analysis (no web search)',
-                    'confidence_level': self._calculate_confidence_level(analysis),
-                    'web_sources_found': 0,
-                    'search_queries_used': [],
-                    'quota_used': 0
+                    'confidence_level': self._calculate_confidence_level(analysis)
                 })
                 return analysis
             else:
@@ -1300,12 +1250,9 @@ class TruthScoreAnalyzer:
             'verification_notes': f'Unable to complete research due to: {reason}',
             'reliability_factors': ['Research system error'],
             'recommendation': 'QUESTION',
-            'research_method': 'ContextualWeb Search API (failed)',
+            'research_method': 'AI-powered fact-checking analysis (failed)',
             'confidence_level': 'LOW',
-            'status_message': '❌ RESEARCH FAILED - Unable to verify this claim due to technical issues',
-            'web_sources_found': 0,
-            'search_queries_used': [],
-            'quota_used': 0
+            'status_message': '❌ RESEARCH FAILED - Unable to verify this claim due to technical issues'
         }
     
     def analyze_transcript(self, transcript_data, title):
@@ -1458,16 +1405,10 @@ class TruthScoreAnalyzer:
             
             self.set_progress("analysis", 50, f"Waiting for {self.model_name} response...")
             
-            try:
-                response = self._call_openai_with_timeout([{"role": "user", "content": prompt}])
-            except TimeoutError as e:
-                self.error_logger.error(f"Analysis timed out after {self.api_timeout}s")
-                self.set_progress("analysis", 0, f"Analysis timed out after {self.api_timeout}s")
-                return self._create_fallback_analysis("", f"Analysis timed out after {self.api_timeout} seconds")
-            except Exception as e:
-                self.error_logger.error(f"Analysis API call failed: {e}")
-                self.set_progress("analysis", 0, f"Analysis failed: {str(e)}")
-                return self._create_fallback_analysis("", f"Analysis API call failed: {str(e)}")
+            response = client.chat.completions.create(
+                model=self.model_name,
+                messages=[{"role": "user", "content": prompt}]
+            )
             
             self.set_progress("analysis", 80, "Processing analysis response...")
             
@@ -1643,20 +1584,6 @@ class TruthScoreAnalyzer:
                 "identification_reasoning": f"Analysis failed: {reason}"
             }
         }
-        
-        if transcription_thread.is_alive():
-            # Timeout occurred
-            raise TimeoutError(f"OpenAI API call timed out after {timeout} seconds")
-        
-        # Check for exceptions
-        if not exception_queue.empty():
-            raise exception_queue.get()
-        
-        # Get results
-        if result_queue.empty():
-            raise RuntimeError("OpenAI API call failed: No response received")
-            
-        return result_queue.get()
 
 analyzer = TruthScoreAnalyzer()
 
@@ -1937,17 +1864,17 @@ def transcribe_with_speaker_diarization():
 def health():
     app_logger.info(f"Health check accessed from {request.remote_addr}")
     
-    # Check web search status
-    web_search_available, web_search_message = analyzer._check_web_search_availability()
-    web_search_info = {
-        'status': 'available' if web_search_available else 'unavailable',
-        'message': web_search_message,
-        'api_configured': bool(analyzer.contextual_web_api_key),
-        'quota_used': analyzer.web_search_quota.get('used', 0),
-        'quota_remaining': analyzer.web_search_quota.get('remaining', 0),
-        'quota_limit': analyzer.contextual_web_quota_limit,
-        'quota_date': analyzer.web_search_quota.get('date', 'unknown')
-    }
+    # Check SerpAPI status
+    serpapi_status = 'unavailable'
+    serpapi_quota = 'unknown'
+    if WEB_SEARCH_AVAILABLE:
+        serpapi_key = os.getenv("SERPAPI_KEY")
+        if serpapi_key:
+            quota_ok, quota_message = check_serpapi_quota()
+            serpapi_status = 'available' if quota_ok else 'quota_exceeded'
+            serpapi_quota = quota_message
+        else:
+            serpapi_status = 'no_api_key'
     
     return jsonify({
         'status': 'healthy',
@@ -1955,7 +1882,9 @@ def health():
         'whisper_model': 'available',
         'openai_api': 'configured',
         'speaker_diarization': 'available' if analyzer.diarization_model else 'unavailable',
-        'web_search': web_search_info
+        'web_search': serpapi_status,
+        'web_search_quota': serpapi_quota,
+        'model_name': analyzer.model_name
     })
 
 if __name__ == '__main__':
