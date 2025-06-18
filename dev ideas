@@ -1,0 +1,6 @@
+1. All analysed videos/speeches get uploaded and are available for everyone once made. - Avoids unnecsary API calls as well.
+2. Chain of thought publicerad
+3. Make the LLM first analyse what kind of video it is, facts, speech, etc. 
+4. A more structure multi stage prompt, that focuses who is speaking, and if it is facts or a speech etc, then further analasis by steps.
+5. A feature that you can tag something in a comment on reddit, youtube, instagram, facebook, twitter. - and it then returns a rating. (Maybe only if the account that tagged was authenticated, and paying)
+6. The paid plans could include higher end transcription models. 

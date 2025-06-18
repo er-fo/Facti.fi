@@ -1,0 +1,12 @@
+A web application where users can input a link (e.g., to a video, speech, or article) and receive a credibility score along with an AI-driven analysis that identifies which quotes or claims are likely true or false. The system works by generating and evaluating a transcript of the content using advanced AI.
+
+Key Features:
+Transparency: Every public analysis includes a breakdown of how the AI reached its conclusions.
+Public Archive: All default analyses are public and accessible to all users.
+Custom Analysis (Paid Tier):
+Users can set their own parameters, such as:
+Focus on psychological techniques (e.g., manipulation tactics).
+Interest in specific patterns of influence or rhetoric.
+Ability to ask follow-up questions.
+Custom analyses remain private to the user.
+Live Web Research: The AI pulls in recent articles and sources to support or challenge the claims being made.

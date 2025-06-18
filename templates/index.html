@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TruthScore - AI-Powered Credibility Analysis</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>TruthScore</h1>
+            <p>AI-powered credibility analysis for audio and video content</p>
+        </header>
+
+        <main>
+            <!-- URL Input Section -->
+            <div class="input-section">
+                <h2>🔍 Analyze Content for Truth & Misinformation</h2>
+                <p class="description">
+                    Paste a URL from any supported platform below to analyze its content for factual accuracy and potential misinformation.
+                </p>
+                
+                <form id="analyzeForm">
+                    <div class="input-group">
+                        <input type="url" 
+                               id="urlInput" 
+                               placeholder="Paste URL here (YouTube, Twitter, Instagram, Facebook, TikTok, etc.)" 
+                               required>
+                        <button type="submit" id="analyzeBtn">
+                            <span class="btn-text">Analyze</span>
+                            <span class="btn-loading" style="display: none;">Analyzing...</span>
+                        </button>
+                    </div>
+                </form>
+                
+                <!-- Platform Support Info -->
+                <div class="platform-info">
+                    <div class="platform-toggle">
+                        <button type="button" id="platformToggle" class="info-toggle">
+                            📋 View Supported Platforms
+                        </button>
+                    </div>
+                    
+                    <div id="platformList" class="platform-list" style="display: none;">
+                        <div class="platform-categories">
+                            <div class="platform-category">
+                                <h4>🎥 Video Platforms</h4>
+                                <ul>
+                                    <li><strong>YouTube</strong> - Videos, live streams, shorts</li>
+                                    <li><strong>Vimeo</strong> - Professional videos</li>
+                                    <li><strong>TikTok</strong> - Short-form videos</li>
+                                    <li><strong>Dailymotion</strong> - Video content</li>
+                                    <li><strong>Rumble</strong> - Video platform</li>
+                                    <li><strong>Twitch</strong> - Live streams and clips</li>
+                                </ul>
+                            </div>
+                            
+                            <div class="platform-category">
+                                <h4>📱 Social Media</h4>
+                                <ul>
+                                    <li><strong>Twitter/X</strong> - Videos and audio content</li>
+                                    <li><strong>Instagram</strong> - Videos, reels, stories</li>
+                                    <li><strong>Facebook</strong> - Videos and live content</li>
+                                    <li><strong>Reddit</strong> - Video posts</li>
+                                </ul>
+                            </div>
+                            
+                            <div class="platform-category">
+                                <h4>🎧 Audio Platforms</h4>
+                                <ul>
+                                    <li><strong>SoundCloud</strong> - Audio tracks and podcasts</li>
+                                    <li><strong>Spotify</strong> - Podcast episodes (limited)</li>
+                                    <li><strong>Podcast platforms</strong> - Anchor.fm, Spreaker, etc.</li>
+                                </ul>
+                            </div>
+                            
+                            <div class="platform-category">
+                                <h4>📰 News & Media</h4>
+                                <ul>
+                                    <li><strong>News sites</strong> - CNN, BBC, Fox News, Reuters</li>
+                                    <li><strong>Media outlets</strong> - NY Times, Washington Post, Guardian</li>
+                                </ul>
+                            </div>
+                        </div>
+                        
+                        <div class="platform-note">
+                            <p><strong>Note:</strong> TruthScore can analyze any content with audio or video. Text-only posts require the content to have accompanying media for analysis.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <section class="progress-section" id="progress-section" style="display: none;">
+                <h3>Processing</h3>
+                <div class="progress-bar">
+                    <div class="progress-fill" id="progress-fill"></div>
+                </div>
+                <div class="progress-info">
+                    <span id="progress-percentage">0%</span>
+                    <span id="progress-message">Initializing...</span>
+                </div>
+                <div class="progress-steps">
+                    <div class="step" id="step-extraction">Audio Extraction</div>
+                    <div class="step" id="step-transcription">Transcription</div>
+                    <div class="step" id="step-analysis">AI Analysis</div>
+                    <div class="step" id="step-research">Research</div>
+                </div>
+            </section>
+
+            <section class="results-section" id="results-section" style="display: none;">
+                <div class="content-info">
+                    <h2 id="content-title"></h2>
+                    <div class="timestamp" id="analysis-timestamp"></div>
+                </div>
+
+                <div class="credibility-score">
+                    <h3>Credibility Score</h3>
+                    <div class="score-display">
+                        <span class="score-value" id="score-value">0</span>
+                        <span class="score-unit">/100</span>
+                    </div>
+                    <div class="score-description" id="score-description"></div>
+                </div>
+
+                <div class="analysis-details">
+                    <div class="detail-section">
+                        <h4>Key Claims</h4>
+                        <ul id="key-claims"></ul>
+                    </div>
+
+                    <div class="detail-section">
+                        <h4>Red Flags</h4>
+                        <ul id="red-flags"></ul>
+                    </div>
+
+                    <div class="detail-section">
+                        <h4>Factual Accuracy</h4>
+                        <div id="factual-accuracy"></div>
+                    </div>
+
+                    <div class="detail-section">
+                        <h4>Bias Indicators</h4>
+                        <ul id="bias-indicators"></ul>
+                    </div>
+
+                    <div class="detail-section">
+                        <h4>Evidence Quality</h4>
+                        <div id="evidence-quality"></div>
+                    </div>
+
+                    <div class="detail-section">
+                        <h4>Analysis Summary</h4>
+                        <div id="analysis-summary"></div>
+                    </div>
+
+                    <div class="detail-section">
+                        <h4>Reasoning Process</h4>
+                        <div id="chain-of-thought" class="reasoning-text"></div>
+                    </div>
+                </div>
+
+                <div class="transcript-section">
+                    <h3>Full Transcript</h3>
+                    <div class="transcript-content" id="transcript-content"></div>
+                </div>
+
+                <div class="research-section" id="research-section">
+                    <h3>Research Results</h3>
+                    <div id="research-results"></div>
+                </div>
+            </section>
+
+            <section class="error-section" id="error-section" style="display: none;">
+                <h3>Analysis Failed</h3>
+                <div id="error-message"></div>
+                <button onclick="hideError()" class="retry-btn">Try Again</button>
+            </section>
+        </main>
+    </div>
+
+    <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+</body>
+</html> 
