@@ -1,6 +1,12 @@
 1. All analysed videos/speeches get uploaded and are available for everyone once made. - Avoids unnecsary API calls as well.
-2. Chain of thought publicerad
-3. Make the LLM first analyse what kind of video it is, facts, speech, etc. 
-4. A more structure multi stage prompt, that focuses who is speaking, and if it is facts or a speech etc, then further analasis by steps.
+Completed 2. Chain of thought publicerad
+Completed 3. Make the LLM first analyse what kind of video it is, facts, speech, etc. 
+Completed 4. A more structure multi stage prompt, that focuses who is speaking, and if it is facts or a speech etc, then further analasis by steps.
 5. A feature that you can tag something in a comment on reddit, youtube, instagram, facebook, twitter. - and it then returns a rating. (Maybe only if the account that tagged was authenticated, and paying)
 6. The paid plans could include higher end transcription models. 
+7. Social media integration: Support Twitter/X and Reddit posts with text-only, text+image, or image-only content using same architecture but with platform-specific extractors and multi-modal analysis.
+8. Multi-modal processing: Integrate OCR and computer vision for image analysis, adapt prompts for social media brevity/context, handle memes/screenshots/infographics with combined text+visual understanding. 
+9. Transparency is important, how each analasis is made should be visible. 
+10. The current (Very advanced interface, showing 10+ points) could be like a premium only, and for the free variant, we shall only show a score, the transcript, and a summary. - And a CTA telling the user to "pay to see full analasis"
+11. Decide if it is appropiate with claim verification, or research. 
+12. SWITCH TO OPENAI WEB RESEARCH!!! PRIORITY

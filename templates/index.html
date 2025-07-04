@@ -9,6 +9,9 @@
 <body>
     <div class="container">
         <header>
+            <div class="header-nav">
+                <a href="/history" class="nav-link">📊 Analysis History</a>
+            </div>
             <h1>TruthScore</h1>
             <p>AI-powered credibility analysis for audio and video content</p>
         </header>
@@ -20,6 +23,39 @@
                 <p class="description">
                     Paste a URL from any supported platform below to analyze its content for factual accuracy and potential misinformation.
                 </p>
+                
+                <!-- Analysis Type Selection -->
+                <div class="analysis-type-section">
+                    <h3>📊 Choose Analysis Type</h3>
+                    <div class="analysis-options">
+                        <div class="analysis-option">
+                            <input type="radio" id="comprehensive" name="analysisType" value="comprehensive" checked>
+                            <label for="comprehensive" class="analysis-label">
+                                <div class="analysis-header">
+                                    <span class="analysis-icon">🏛️</span>
+                                    <span class="analysis-title">Comprehensive Analysis</span>
+                                </div>
+                                <p class="analysis-description">
+                                    Deep political rhetoric analysis including hate speech detection, psychological markers, 
+                                    rhetorical tactics, and extensive fact-checking. Best for detailed content evaluation.
+                                </p>
+                            </label>
+                        </div>
+                        <div class="analysis-option">
+                            <input type="radio" id="simple" name="analysisType" value="simple">
+                            <label for="simple" class="analysis-label">
+                                <div class="analysis-header">
+                                    <span class="analysis-icon">⚡</span>
+                                    <span class="analysis-title">Simple Analysis</span>
+                                </div>
+                                <p class="analysis-description">
+                                    Quick factual accuracy check with key claims identification, red flags, 
+                                    and basic credibility assessment. Faster and more focused.
+                                </p>
+                            </label>
+                        </div>
+                    </div>
+                </div>
                 
                 <form id="analyzeForm">
                     <div class="input-group">
@@ -124,6 +160,108 @@
                 </div>
 
                 <div class="analysis-details">
+                    <!-- Enhanced Analysis Sections -->
+                    <div id="enhanced-sections" style="display: none;">
+                        <div class="dropdown-section" id="rhetorical-tactics-section">
+                            <div class="dropdown-header" onclick="toggleDropdown('rhetorical-tactics')">
+                                <div class="dropdown-title">
+                                    <span class="dropdown-icon">🏛️</span>
+                                    <h4>Rhetorical Tactics</h4>
+                                </div>
+                                <div class="dropdown-arrow">
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <polyline points="6,9 12,15 18,9"></polyline>
+                                    </svg>
+                                </div>
+                            </div>
+                            <div class="dropdown-content" id="rhetorical-tactics" style="display: none;">
+                                <div class="tactics-grid"></div>
+                            </div>
+                        </div>
+
+                        <div class="dropdown-section" id="hate-speech-section">
+                            <div class="dropdown-header" onclick="toggleDropdown('hate-speech-analysis')">
+                                <div class="dropdown-title">
+                                    <span class="dropdown-icon">⚠️</span>
+                                    <h4>Hate Speech Analysis</h4>
+                                </div>
+                                <div class="dropdown-arrow">
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <polyline points="6,9 12,15 18,9"></polyline>
+                                    </svg>
+                                </div>
+                            </div>
+                            <div class="dropdown-content" id="hate-speech-analysis" style="display: none;">
+                                <div class="hate-speech-grid"></div>
+                            </div>
+                        </div>
+
+                        <div class="dropdown-section" id="psychological-markers-section">
+                            <div class="dropdown-header" onclick="toggleDropdown('psychological-markers')">
+                                <div class="dropdown-title">
+                                    <span class="dropdown-icon">🧠</span>
+                                    <h4>Psychological Markers</h4>
+                                </div>
+                                <div class="dropdown-arrow">
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <polyline points="6,9 12,15 18,9"></polyline>
+                                    </svg>
+                                </div>
+                            </div>
+                            <div class="dropdown-content" id="psychological-markers" style="display: none;">
+                                <div class="psychological-grid"></div>
+                            </div>
+                        </div>
+
+                        <div class="dropdown-section" id="contradictions-section">
+                            <div class="dropdown-header" onclick="toggleDropdown('contradictions-analysis')">
+                                <div class="dropdown-title">
+                                    <span class="dropdown-icon">⚡</span>
+                                    <h4>Contradictions & Issues</h4>
+                                </div>
+                                <div class="dropdown-arrow">
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <polyline points="6,9 12,15 18,9"></polyline>
+                                    </svg>
+                                </div>
+                            </div>
+                            <div class="dropdown-content" id="contradictions-analysis" style="display: none;"></div>
+                        </div>
+
+                        <div class="dropdown-section" id="extortion-section">
+                            <div class="dropdown-header" onclick="toggleDropdown('extortion-analysis')">
+                                <div class="dropdown-title">
+                                    <span class="dropdown-icon">🚨</span>
+                                    <h4>Coercive Language</h4>
+                                </div>
+                                <div class="dropdown-arrow">
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <polyline points="6,9 12,15 18,9"></polyline>
+                                    </svg>
+                                </div>
+                            </div>
+                            <div class="dropdown-content" id="extortion-analysis" style="display: none;"></div>
+                        </div>
+
+                        <div class="dropdown-section" id="subjective-claims-section">
+                            <div class="dropdown-header" onclick="toggleDropdown('subjective-claims')">
+                                <div class="dropdown-title">
+                                    <span class="dropdown-icon">💭</span>
+                                    <h4>Subjective Claims</h4>
+                                </div>
+                                <div class="dropdown-arrow">
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <polyline points="6,9 12,15 18,9"></polyline>
+                                    </svg>
+                                </div>
+                            </div>
+                            <div class="dropdown-content" id="subjective-claims" style="display: none;">
+                                <ul></ul>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Standard Analysis Sections -->
                     <div class="detail-section">
                         <h4>Key Claims</h4>
                         <ul id="key-claims"></ul>
@@ -169,6 +307,111 @@
                     <h3>Research Results</h3>
                     <div id="research-results"></div>
                 </div>
+
+                <!-- Video Generation Section -->
+                <div class="video-generation-section" id="video-generation-section" style="display: none;">
+                    <h3>🎬 Generate Video Clip</h3>
+                    <p class="video-description">
+                        Create engaging video clips from this analysis with AI voice-over, visual overlays, and professional presentation.
+                    </p>
+                    
+                    <div class="video-options">
+                        <div class="video-option">
+                            <div class="video-option-header">
+                                <input type="radio" id="social-clip" name="videoType" value="social" checked>
+                                <label for="social-clip" class="video-option-label">
+                                    <div class="video-option-title">
+                                        <span class="video-icon">📱</span>
+                                        <span>Social Media Clip</span>
+                                    </div>
+                                    <p class="video-option-description">
+                                        Short 25-30 second clips perfect for TikTok, Instagram, and Twitter. 
+                                        Highlights key claims with dynamic overlays.
+                                    </p>
+                                </label>
+                            </div>
+                        </div>
+                        
+                        <div class="video-option">
+                            <div class="video-option-header">
+                                <input type="radio" id="summary-clip" name="videoType" value="summary">
+                                <label for="summary-clip" class="video-option-label">
+                                    <div class="video-option-title">
+                                        <span class="video-icon">📺</span>
+                                        <span>Summary Clip</span>
+                                    </div>
+                                    <p class="video-option-description">
+                                        Comprehensive 1-3 minute summary video with detailed analysis, 
+                                        research findings, and credibility assessment.
+                                    </p>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="video-settings">
+                        <h4>Customization Options</h4>
+                        <div class="settings-grid">
+                            <label class="setting-item">
+                                <input type="checkbox" id="include-credibility" checked>
+                                <span>Include Credibility Score</span>
+                            </label>
+                            <label class="setting-item">
+                                <input type="checkbox" id="include-fact-checks" checked>
+                                <span>Show Fact Check Indicators</span>
+                            </label>
+                            <label class="setting-item">
+                                <input type="checkbox" id="include-speakers" checked>
+                                <span>Display Speaker Identification</span>
+                            </label>
+                        </div>
+                    </div>
+                    
+                    <div class="video-actions">
+                        <button type="button" id="generate-video-btn" class="generate-video-btn">
+                            <span class="btn-text">🎬 Generate Video</span>
+                            <span class="btn-loading" style="display: none;">⏳ Generating...</span>
+                        </button>
+                    </div>
+                    
+                    <!-- Video Generation Progress -->
+                    <div class="video-progress-section" id="video-progress-section" style="display: none;">
+                        <h4>Video Generation Progress</h4>
+                        <div class="video-progress-bar">
+                            <div class="video-progress-fill" id="video-progress-fill"></div>
+                        </div>
+                        <div class="video-progress-info">
+                            <span id="video-progress-percentage">0%</span>
+                            <span id="video-progress-message">Initializing...</span>
+                        </div>
+                        <div class="video-progress-steps">
+                            <div class="video-step" id="video-step-analysis">Content Analysis</div>
+                            <div class="video-step" id="video-step-tts">Voice Generation</div>
+                            <div class="video-step" id="video-step-assembly">Video Assembly</div>
+                            <div class="video-step" id="video-step-render">Final Render</div>
+                        </div>
+                    </div>
+                    
+                    <!-- Video Result -->
+                    <div class="video-result-section" id="video-result-section" style="display: none;">
+                        <h4>✅ Video Generated Successfully!</h4>
+                        <div class="video-result-info">
+                            <div class="video-metadata">
+                                <span id="video-duration">Duration: --</span>
+                                <span id="video-size">Size: --</span>
+                                <span id="video-resolution">Resolution: 1920x1080</span>
+                            </div>
+                            <div class="video-actions-result">
+                                <a href="#" id="download-video-link" class="download-video-btn" style="display: none;">
+                                    📥 Download Video
+                                </a>
+                                <button type="button" id="generate-another-btn" class="secondary-btn">
+                                    🔄 Generate Another Style
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </section>
 
             <section class="error-section" id="error-section" style="display: none;">
@@ -180,5 +423,173 @@
     </div>
 
     <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+    {% if auto_load_request_id %}
+    <script>
+        // SIMPLIFIED AUTO-LOAD MECHANISM - Dec 27, 2024
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('🔄 Starting simplified auto-load for request: {{ auto_load_request_id }}');
+            
+            // Hide input section immediately
+            const inputSection = document.querySelector('.input-section');
+            if (inputSection) {
+                inputSection.style.display = 'none';
+            }
+            
+            // Add simple loading message
+            const main = document.querySelector('main');
+            const loadingDiv = document.createElement('div');
+            loadingDiv.id = 'simple-loader';
+            loadingDiv.innerHTML = `
+                <div style="text-align: center; padding: 40px; background: #f8fafc; border-radius: 12px; margin: 20px 0;">
+                    <div style="width: 40px; height: 40px; border: 3px solid #e2e8f0; border-top: 3px solid #4299e1; border-radius: 50%; animation: spin 1s linear infinite; margin: 0 auto 20px;"></div>
+                    <h3 style="color: #374151; margin-bottom: 10px;">Loading Analysis</h3>
+                    <p style="color: #6b7280; margin: 0;" id="load-status">Retrieving stored analysis...</p>
+                </div>
+                <style>
+                    @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+                </style>
+            `;
+            main.appendChild(loadingDiv);
+            
+            // Simple load function with retries
+            let attempt = 0;
+            const maxAttempts = 3;
+            
+            function loadAnalysis() {
+                attempt++;
+                const statusEl = document.getElementById('load-status');
+                
+                if (statusEl) {
+                    statusEl.textContent = attempt === 1 ? 'Retrieving stored analysis...' : 
+                                          attempt === 2 ? 'Retrying connection...' : 
+                                          'Final attempt...';
+                }
+                
+                fetch('/results/{{ auto_load_request_id }}')
+                    .then(response => {
+                        if (!response.ok) {
+                            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                        }
+                        return response.json();
+                    })
+                    .then(data => {
+                        console.log('✅ Analysis data loaded successfully');
+                        
+                        // Remove loading indicator
+                        const loader = document.getElementById('simple-loader');
+                        if (loader) loader.remove();
+                        
+                        // Ensure required DOM elements exist
+                        const requiredElements = ['results-section', 'content-title', 'score-value'];
+                        const missing = requiredElements.filter(id => !document.getElementById(id));
+                        
+                        if (missing.length > 0) {
+                            throw new Error(`Missing DOM elements: ${missing.join(', ')}`);
+                        }
+                        
+                        // Show results section
+                        const resultsSection = document.getElementById('results-section');
+                        resultsSection.style.display = 'block';
+                        
+                        // Basic display - safe and simple
+                        document.getElementById('content-title').textContent = data.title || 'Stored Analysis';
+                        document.getElementById('analysis-timestamp').textContent = `Analyzed: ${new Date(data.timestamp).toLocaleDateString()}`;
+                        
+                        // Safe credibility score display
+                        const score = data.analysis?.credibility_score || data.analysis?.truthfulness?.overall_score || 50;
+                        const scoreEl = document.getElementById('score-value');
+                        scoreEl.textContent = Math.round(score);
+                        scoreEl.style.color = score >= 70 ? '#059669' : score >= 40 ? '#d97706' : '#dc2626';
+                        
+                        // Safe content display with fallbacks
+                        const safeSet = (id, value, fallback = 'Not available') => {
+                            const el = document.getElementById(id);
+                            if (el) {
+                                if (Array.isArray(value) && value.length > 0) {
+                                    el.innerHTML = value.map(item => `<li>${typeof item === 'string' ? item : JSON.stringify(item)}</li>`).join('');
+                                } else if (typeof value === 'string' && value.trim()) {
+                                    el.textContent = value;
+                                } else {
+                                    el.textContent = fallback;
+                                }
+                            }
+                        };
+                        
+                        // Populate analysis sections safely
+                        safeSet('key-claims', data.analysis?.key_claims);
+                        safeSet('red-flags', data.analysis?.red_flags);
+                        safeSet('factual-accuracy', data.analysis?.factual_accuracy);
+                        safeSet('bias-indicators', data.analysis?.bias_indicators);
+                        safeSet('evidence-quality', data.analysis?.evidence_quality);
+                        safeSet('analysis-summary', data.analysis?.analysis_summary);
+                        safeSet('chain-of-thought', data.analysis?.chain_of_thought);
+                        
+                        // Safe transcript display
+                        const transcriptEl = document.getElementById('transcript-content');
+                        if (transcriptEl && data.transcript) {
+                            if (typeof data.transcript === 'object') {
+                                transcriptEl.textContent = data.transcript.enhanced_display || 
+                                                         data.transcript.full_text || 
+                                                         'Transcript data available but not displayable';
+                            } else {
+                                transcriptEl.textContent = data.transcript;
+                            }
+                        }
+                        
+                        // Simple research display
+                        const researchEl = document.getElementById('research-results');
+                        if (researchEl && data.research && Array.isArray(data.research)) {
+                            researchEl.innerHTML = `<p><strong>Research completed:</strong> ${data.research.length} research items analyzed</p>`;
+                        }
+                        
+                        // Add stored analysis note
+                        const note = document.createElement('div');
+                        note.style.cssText = 'background: #e0f2fe; border: 1px solid #0288d1; border-radius: 8px; padding: 12px; margin-bottom: 20px; color: #01579b;';
+                        note.innerHTML = '<p style="margin: 0;">📚 This is a stored analysis. <a href="/" style="color: #0277bd;">Analyze new content</a> or <a href="/history" style="color: #0277bd;">view all analyses</a>.</p>';
+                        resultsSection.insertBefore(note, resultsSection.firstChild);
+                        
+                        // Scroll to results
+                        resultsSection.scrollIntoView({ behavior: 'smooth' });
+                        
+                        console.log('✅ Analysis display completed successfully');
+                    })
+                    .catch(error => {
+                        console.error(`❌ Load attempt ${attempt} failed:`, error);
+                        
+                        if (attempt < maxAttempts) {
+                            console.log(`🔄 Retrying in 2 seconds... (attempt ${attempt + 1}/${maxAttempts})`);
+                            setTimeout(loadAnalysis, 2000);
+                        } else {
+                            // Final failure - show user-friendly error
+                            const loader = document.getElementById('simple-loader');
+                            if (loader) loader.remove();
+                            
+                            if (inputSection) inputSection.style.display = 'block';
+                            
+                            const errorDiv = document.createElement('div');
+                            errorDiv.style.cssText = 'background: #fee2e2; border: 1px solid #fca5a5; border-radius: 8px; padding: 20px; margin: 20px 0; color: #991b1b;';
+                            errorDiv.innerHTML = `
+                                <h3 style="margin: 0 0 10px 0;">⚠️ Unable to Load Analysis</h3>
+                                <p style="margin: 0 0 15px 0;">We couldn't load the stored analysis. This might be a temporary issue.</p>
+                                <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                                    <a href="/history" style="background: #dc2626; color: white; padding: 8px 16px; border-radius: 6px; text-decoration: none;">← Back to History</a>
+                                    <a href="/analysis/{{ auto_load_request_id.split('_')[1] }}" style="background: #059669; color: white; padding: 8px 16px; border-radius: 6px; text-decoration: none;">🔄 Try Again</a>
+                                    <a href="/" style="background: #4f46e5; color: white; padding: 8px 16px; border-radius: 6px; text-decoration: none;">🏠 Home</a>
+                                </div>
+                                <details style="margin-top: 15px;">
+                                    <summary style="cursor: pointer; color: #7c2d12;">Technical Details</summary>
+                                    <pre style="background: #fef7ff; padding: 10px; border-radius: 4px; margin-top: 10px; font-size: 12px; overflow-x: auto;">${error.message}</pre>
+                                </details>
+                            `;
+                            main.appendChild(errorDiv);
+                        }
+                    });
+            }
+            
+            // Start loading with a small delay to ensure DOM is ready
+            setTimeout(loadAnalysis, 100);
+        });
+    </script>
+    {% endif %}
 </body>
 </html> 

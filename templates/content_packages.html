@@ -1,0 +1,473 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TruthScore - Content Packages</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+    <style>
+        .package-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        .controls {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 30px;
+            display: flex;
+            gap: 15px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+        
+        .package-card {
+            border: 1px solid #e5e7eb;
+            padding: 25px;
+            margin: 15px 0;
+            border-radius: 12px;
+            background: linear-gradient(135deg, #ffffff 0%, #f9fafb 100%);
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            transition: all 0.3s ease;
+        }
+        
+        .package-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px -5px rgba(0, 0, 0, 0.1);
+        }
+        
+        .package-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        
+        .package-title {
+            font-size: 1.5em;
+            font-weight: bold;
+            color: #1f2937;
+            margin: 0;
+        }
+        
+        .package-score {
+            padding: 8px 16px;
+            border-radius: 20px;
+            color: white;
+            font-weight: bold;
+            font-size: 0.9em;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .score-high { 
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+        }
+        .score-medium { 
+            background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+        }
+        .score-low { 
+            background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+        }
+        
+        .package-description {
+            color: #6b7280;
+            margin-bottom: 20px;
+            font-style: italic;
+        }
+        
+        .package-stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        
+        .stat-box {
+            background: #f3f4f6;
+            padding: 15px;
+            border-radius: 8px;
+            text-align: center;
+        }
+        
+        .stat-number {
+            font-size: 1.8em;
+            font-weight: bold;
+            color: #1f2937;
+        }
+        
+        .stat-label {
+            color: #6b7280;
+            font-size: 0.9em;
+            margin-top: 5px;
+        }
+        
+        .video-plan {
+            background: linear-gradient(135deg, #e5e7eb 0%, #d1d5db 100%);
+            padding: 20px;
+            border-radius: 8px;
+            margin-top: 15px;
+        }
+        
+        .video-plan h4 {
+            margin: 0 0 15px 0;
+            color: #374151;
+        }
+        
+        .video-format {
+            background: white;
+            padding: 12px;
+            margin: 8px 0;
+            border-radius: 6px;
+            border-left: 4px solid #3b82f6;
+        }
+        
+        .generate-btn {
+            background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .generate-btn:hover {
+            background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+            transform: translateY(-1px);
+        }
+        
+        .generate-btn:disabled {
+            background: #9ca3af;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        .create-btn {
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 1.1em;
+            transition: all 0.3s ease;
+        }
+        
+        .create-btn:hover {
+            background: linear-gradient(135deg, #059669 0%, #047857 100%);
+            transform: translateY(-1px);
+        }
+        
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(255,255,255,.3);
+            border-radius: 50%;
+            border-top-color: #fff;
+            animation: spin 1s ease-in-out infinite;
+            margin-right: 10px;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        
+        .status-message {
+            padding: 15px;
+            border-radius: 8px;
+            margin: 20px 0;
+            text-align: center;
+        }
+        
+        .status-success {
+            background: #d1fae5;
+            color: #065f46;
+            border: 1px solid #a7f3d0;
+        }
+        
+        .status-error {
+            background: #fee2e2;
+            color: #991b1b;
+            border: 1px solid #fecaca;
+        }
+        
+        .analyses-list {
+            margin-top: 15px;
+        }
+        
+        .analysis-item {
+            background: white;
+            padding: 12px;
+            margin: 5px 0;
+            border-radius: 6px;
+            border-left: 3px solid #6b7280;
+            font-size: 0.9em;
+        }
+        
+        .analysis-item .title {
+            font-weight: bold;
+            color: #1f2937;
+        }
+        
+        .analysis-item .score {
+            color: #6b7280;
+            font-size: 0.8em;
+        }
+    </style>
+</head>
+<body>
+    <div class="package-container">
+        <div class="header-nav" style="display: flex; gap: 15px; margin-bottom: 30px; justify-content: center;">
+            <a href="/" class="nav-link">🏠 Home</a>
+            <a href="/history" class="nav-link">📊 Analysis History</a>
+            <a href="/content-packages" class="nav-link active">📦 Content Packages</a>
+            <a href="http://localhost:9000" class="nav-link" target="_blank">🎬 Video Module</a>
+        </div>
+        
+        <header>
+            <h1>🎬 Content Packages</h1>
+            <p>Create and manage AI-generated content packages from your TruthScore analyses</p>
+        </header>
+        
+        <main>
+            <div class="controls">
+                <button onclick="createPackages()" class="create-btn" id="createBtn">
+                    Create New Packages
+                </button>
+                <select id="timeRange">
+                    <option value="week">Past Week</option>
+                    <option value="month">Past Month</option>
+                </select>
+                <div id="packageStats" style="margin-left: auto; color: #6b7280;"></div>
+            </div>
+            
+            <div id="statusMessage"></div>
+            
+            <div id="packagesContainer">
+                <div class="status-message">
+                    <p>Click "Create New Packages" to generate content packages from your TruthScore analyses.</p>
+                    <p>Packages group your analyses by credibility themes and prepare them for video generation.</p>
+                </div>
+            </div>
+        </main>
+    </div>
+    
+    <script>
+        let isCreatingPackages = false;
+        let isGeneratingVideos = false;
+        let lastRequestTime = 0;
+        const REQUEST_DEBOUNCE_MS = 2000; // Prevent requests within 2 seconds
+        
+        async function createPackages() {
+            // Debounce rapid requests
+            const now = Date.now();
+            if (now - lastRequestTime < REQUEST_DEBOUNCE_MS) {
+                console.log('Request debounced - too soon after last request');
+                return;
+            }
+            lastRequestTime = now;
+            
+            if (isCreatingPackages) {
+                console.log('Already creating packages, ignoring request');
+                return;
+            }
+            
+            const timeRange = document.getElementById('timeRange').value;
+            const createBtn = document.getElementById('createBtn');
+            const statusDiv = document.getElementById('statusMessage');
+            
+            isCreatingPackages = true;
+            createBtn.disabled = true;
+            createBtn.innerHTML = '<div class="loading"></div>Creating Packages...';
+            
+            try {
+                statusDiv.innerHTML = '<div class="status-message">🔄 Creating content packages from your analyses...</div>';
+                
+                console.log(`Making request for time_range: ${timeRange}`);
+                
+                const response = await fetch('/api/content-packages/create', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ time_range: timeRange })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    statusDiv.innerHTML = `<div class="status-message status-success">✅ Successfully created ${data.packages.length} content packages!</div>`;
+                    displayPackages(data.packages);
+                    updatePackageStats(data.packages);
+                } else {
+                    statusDiv.innerHTML = `<div class="status-message status-error">❌ Error creating packages: ${data.error}</div>`;
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                statusDiv.innerHTML = '<div class="status-message status-error">❌ Network error creating packages</div>';
+            } finally {
+                isCreatingPackages = false;
+                createBtn.disabled = false;
+                createBtn.innerHTML = 'Create New Packages';
+            }
+        }
+        
+        function updatePackageStats(packages) {
+            const statsDiv = document.getElementById('packageStats');
+            const totalAnalyses = packages.reduce((sum, pkg) => sum + pkg.analyses.length, 0);
+            statsDiv.innerHTML = `📊 ${packages.length} packages | ${totalAnalyses} total analyses`;
+        }
+        
+        function displayPackages(packages) {
+            const container = document.getElementById('packagesContainer');
+            
+            if (packages.length === 0) {
+                container.innerHTML = '<div class="status-message">📭 No packages found for the selected time period. Try analyzing some content first!</div>';
+                return;
+            }
+            
+            let html = '';
+            packages.forEach((package, index) => {
+                const scoreClass = `score-${package.package_score}`;
+                const avgScore = package.analyses.length > 0 ? 
+                    (package.analyses.reduce((sum, a) => sum + (a.analysis?.credibility_score || 50), 0) / package.analyses.length).toFixed(1) : 'N/A';
+                
+                html += `
+                    <div class="package-card">
+                        <div class="package-header">
+                            <h2 class="package-title">${package.theme}</h2>
+                            <span class="package-score ${scoreClass}">${package.package_score} credibility</span>
+                        </div>
+                        
+                        <p class="package-description">${package.description}</p>
+                        
+                        <div class="package-stats">
+                            <div class="stat-box">
+                                <div class="stat-number">${package.analyses.length}</div>
+                                <div class="stat-label">Analyses</div>
+                            </div>
+                            <div class="stat-box">
+                                <div class="stat-number">${avgScore}</div>
+                                <div class="stat-label">Avg Score</div>
+                            </div>
+                            <div class="stat-box">
+                                <div class="stat-number">${package.video_plan ? package.video_plan.length : 0}</div>
+                                <div class="stat-label">Video Formats</div>
+                            </div>
+                        </div>
+                        
+                        ${package.video_plan ? `
+                            <div class="video-plan">
+                                <h4>📹 Video Plan</h4>
+                                ${package.video_plan.map(plan => `
+                                    <div class="video-format">
+                                        <strong>${plan.format}</strong> - ${plan.duration} | ${plan.description}
+                                    </div>
+                                `).join('')}
+                            </div>
+                        ` : ''}
+                        
+                        <div class="analyses-list">
+                            <h4>📋 Included Analyses</h4>
+                            ${package.analyses.slice(0, 3).map(analysis => `
+                                <div class="analysis-item">
+                                    <div class="title">${analysis.title || 'Untitled Analysis'}</div>
+                                    <div class="score">Score: ${analysis.analysis?.credibility_score || 'N/A'}</div>
+                                </div>
+                            `).join('')}
+                            ${package.analyses.length > 3 ? `<div style="color: #6b7280; font-style: italic; padding: 10px;">...and ${package.analyses.length - 3} more</div>` : ''}
+                        </div>
+                        
+                        <button onclick="generateVideos(${index})" 
+                                class="generate-btn" 
+                                id="generateBtn${index}"
+                                ${!package.video_plan || package.video_plan.length === 0 ? 'disabled' : ''}>
+                            🎬 Generate Videos
+                        </button>
+                    </div>
+                `;
+            });
+            
+            container.innerHTML = html;
+            window.currentPackages = packages;
+            localStorage.setItem('currentPackages', JSON.stringify(packages));
+        }
+        
+        async function generateVideos(packageIndex) {
+            // Debounce video generation requests
+            const now = Date.now();
+            if (now - lastRequestTime < REQUEST_DEBOUNCE_MS) {
+                console.log('Video generation request debounced');
+                return;
+            }
+            lastRequestTime = now;
+            
+            if (isGeneratingVideos) {
+                console.log('Already generating videos, ignoring request');
+                return;
+            }
+            
+            const packages = window.currentPackages || [];
+            const package = packages[packageIndex];
+            
+            if (!package) return;
+            
+            const generateBtn = document.getElementById(`generateBtn${packageIndex}`);
+            const statusDiv = document.getElementById('statusMessage');
+            
+            isGeneratingVideos = true;
+            generateBtn.disabled = true;
+            generateBtn.innerHTML = '<div class="loading"></div>Generating Videos...';
+            
+            try {
+                statusDiv.innerHTML = `<div class="status-message">🎬 Generating videos for "${package.theme}"...</div>`;
+                
+                console.log(`Making video generation request for package: ${package.theme}`);
+                
+                const response = await fetch('/api/content-packages/generate-videos', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ package: package })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    statusDiv.innerHTML = `<div class="status-message status-success">✅ Video generation started for "${package.theme}"! Check your video module for progress.</div>`;
+                } else {
+                    statusDiv.innerHTML = `<div class="status-message status-error">❌ Error generating videos: ${data.error}</div>`;
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                statusDiv.innerHTML = '<div class="status-message status-error">❌ Network error generating videos</div>';
+            } finally {
+                isGeneratingVideos = false;
+                generateBtn.disabled = false;
+                generateBtn.innerHTML = '🎬 Generate Videos';
+            }
+        }
+        
+        // Prevent multiple event listeners and auto-loading issues
+        let pageLoaded = false;
+        window.addEventListener('load', function() {
+            if (pageLoaded) return; // Prevent multiple loads
+            pageLoaded = true;
+            
+            // Only auto-load if explicitly requested and not already loaded
+            const urlParams = new URLSearchParams(window.location.search);
+            if (urlParams.get('autoload') === 'true' && !localStorage.getItem('currentPackages')) {
+                console.log('Auto-loading packages on page load');
+                createPackages();
+            }
+        });
+        
+        // This function is already defined above - removing duplicate
+    </script>
+</body>
+</html> 

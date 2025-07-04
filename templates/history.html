@@ -1,0 +1,595 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Analysis History - TruthScore</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <style>
+        /* History-specific styles */
+        .history-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: var(--space-8) var(--space-6);
+        }
+
+        .history-header {
+            text-align: center;
+            margin-bottom: var(--space-12);
+            padding-bottom: var(--space-8);
+            border-bottom: 1px solid var(--color-gray-200);
+        }
+
+        .history-header h1 {
+            font-size: var(--font-size-4xl);
+            font-weight: var(--font-weight-bold);
+            margin-bottom: var(--space-4);
+            background: linear-gradient(135deg, var(--color-primary), var(--color-secondary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .history-stats {
+            display: flex;
+            gap: var(--space-6);
+            justify-content: center;
+            margin-bottom: var(--space-8);
+        }
+
+        .stat-item {
+            text-align: center;
+            padding: var(--space-4);
+            background: var(--color-bg-muted);
+            border-radius: var(--radius-lg);
+            min-width: 120px;
+        }
+
+        .stat-value {
+            font-size: var(--font-size-2xl);
+            font-weight: var(--font-weight-bold);
+            color: var(--color-primary);
+        }
+
+        .stat-label {
+            font-size: var(--font-size-sm);
+            color: var(--color-text-muted);
+            margin-top: var(--space-1);
+        }
+
+        .controls-section {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: var(--space-8);
+            gap: var(--space-4);
+        }
+
+        .search-input {
+            padding: var(--space-3);
+            border: 1px solid var(--color-gray-300);
+            border-radius: var(--radius-md);
+            font-size: var(--font-size-base);
+            min-width: 300px;
+        }
+
+        .search-input:focus {
+            outline: none;
+            border-color: var(--color-primary);
+            box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+        }
+
+        .sort-select {
+            padding: var(--space-3);
+            border: 1px solid var(--color-gray-300);
+            border-radius: var(--radius-md);
+            background: white;
+            cursor: pointer;
+        }
+
+        .back-link {
+            display: inline-flex;
+            align-items: center;
+            gap: var(--space-2);
+            color: var(--color-primary);
+            text-decoration: none;
+            font-weight: var(--font-weight-medium);
+            margin-bottom: var(--space-6);
+        }
+
+        .back-link:hover {
+            color: var(--color-primary-hover);
+        }
+
+        .analyses-grid {
+            display: grid;
+            gap: var(--space-6);
+        }
+
+        .analysis-card {
+            background: white;
+            border: 1px solid var(--color-gray-200);
+            border-radius: var(--radius-lg);
+            padding: var(--space-6);
+            transition: all var(--transition-base);
+        }
+
+        .analysis-card:hover {
+            box-shadow: var(--shadow-md);
+            border-color: var(--color-gray-300);
+        }
+
+        .analysis-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: var(--space-4);
+        }
+
+        .analysis-title {
+            font-size: var(--font-size-lg);
+            font-weight: var(--font-weight-semibold);
+            color: var(--color-text-primary);
+            margin-bottom: var(--space-2);
+            line-height: var(--line-height-snug);
+        }
+
+        .analysis-url {
+            font-size: var(--font-size-sm);
+            color: var(--color-text-muted);
+            word-break: break-all;
+        }
+
+        .analysis-meta {
+            display: flex;
+            gap: var(--space-4);
+            margin-bottom: var(--space-4);
+        }
+
+        .meta-item {
+            display: flex;
+            align-items: center;
+            gap: var(--space-1);
+            font-size: var(--font-size-sm);
+            color: var(--color-text-secondary);
+        }
+
+        .credibility-badge {
+            padding: var(--space-1) var(--space-3);
+            border-radius: var(--radius-full);
+            font-size: var(--font-size-sm);
+            font-weight: var(--font-weight-medium);
+        }
+
+        .credibility-high {
+            background: var(--color-success-light);
+            color: var(--color-success);
+        }
+
+        .credibility-medium {
+            background: var(--color-warning-light);
+            color: var(--color-warning);
+        }
+
+        .credibility-low {
+            background: var(--color-error-light);
+            color: var(--color-error);
+        }
+
+        .analysis-type-badge {
+            padding: var(--space-1) var(--space-3);
+            border-radius: var(--radius-full);
+            background: var(--color-primary-light);
+            color: var(--color-primary);
+            font-size: var(--font-size-xs);
+            font-weight: var(--font-weight-medium);
+            text-transform: uppercase;
+        }
+
+        .analysis-actions {
+            display: flex;
+            gap: var(--space-3);
+        }
+
+        .action-btn {
+            padding: var(--space-2) var(--space-4);
+            border: 1px solid var(--color-gray-300);
+            border-radius: var(--radius-md);
+            background: white;
+            color: var(--color-text-secondary);
+            text-decoration: none;
+            font-size: var(--font-size-sm);
+            font-weight: var(--font-weight-medium);
+            transition: all var(--transition-fast);
+            cursor: pointer;
+        }
+
+        .action-btn:hover {
+            border-color: var(--color-primary);
+            color: var(--color-primary);
+        }
+
+        .action-btn.primary {
+            background: var(--color-primary);
+            color: white;
+            border-color: var(--color-primary);
+        }
+
+        .action-btn.primary:hover {
+            background: var(--color-primary-hover);
+            border-color: var(--color-primary-hover);
+        }
+
+        .action-btn.danger {
+            color: var(--color-error);
+            border-color: var(--color-error-light);
+        }
+
+        .action-btn.danger:hover {
+            background: var(--color-error);
+            color: white;
+            border-color: var(--color-error);
+        }
+
+        .loading-state {
+            text-align: center;
+            padding: var(--space-12);
+            color: var(--color-text-muted);
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: var(--space-16);
+            color: var(--color-text-muted);
+        }
+
+        .empty-state h3 {
+            font-size: var(--font-size-xl);
+            margin-bottom: var(--space-4);
+        }
+
+        .pagination {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: var(--space-4);
+            margin-top: var(--space-12);
+        }
+
+        .pagination-btn {
+            padding: var(--space-2) var(--space-4);
+            border: 1px solid var(--color-gray-300);
+            border-radius: var(--radius-md);
+            background: white;
+            color: var(--color-text-secondary);
+            cursor: pointer;
+            font-size: var(--font-size-sm);
+        }
+
+        .pagination-btn:hover:not(:disabled) {
+            border-color: var(--color-primary);
+            color: var(--color-primary);
+        }
+
+        .pagination-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .pagination-info {
+            font-size: var(--font-size-sm);
+            color: var(--color-text-muted);
+        }
+
+        @media (max-width: 768px) {
+            .history-container {
+                padding: var(--space-6) var(--space-4);
+            }
+
+            .controls-section {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .search-input {
+                min-width: auto;
+            }
+
+            .history-stats {
+                flex-wrap: wrap;
+                gap: var(--space-4);
+            }
+
+            .analysis-header {
+                flex-direction: column;
+                gap: var(--space-3);
+            }
+
+            .analysis-meta {
+                flex-wrap: wrap;
+            }
+
+            .analysis-actions {
+                justify-content: flex-start;
+                flex-wrap: wrap;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="history-container">
+        <div class="header-nav" style="display: flex; gap: var(--space-4); margin-bottom: var(--space-6); justify-content: center;">
+            <a href="/" class="nav-link">🏠 Home</a>
+            <a href="/history" class="nav-link active">📊 Analysis History</a>
+            <a href="/content-packages" class="nav-link">📦 Content Packages</a>
+            <a href="http://localhost:9000" class="nav-link" target="_blank">🎬 Video Module</a>
+        </div>
+
+        <div class="history-header">
+            <h1>Analysis History</h1>
+            <p>Browse and manage all previous content analyses</p>
+        </div>
+
+        <div class="history-stats" id="history-stats">
+            <div class="stat-item">
+                <div class="stat-value" id="total-analyses">-</div>
+                <div class="stat-label">Total Analyses</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value" id="recent-analyses">-</div>
+                <div class="stat-label">This Week</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value" id="avg-score">-</div>
+                <div class="stat-label">Avg. Score</div>
+            </div>
+        </div>
+
+        <div class="controls-section">
+            <input type="text" 
+                   id="search-input" 
+                   class="search-input" 
+                   placeholder="Search by title or URL...">
+            
+            <select id="sort-select" class="sort-select">
+                <option value="updated_at DESC">Newest First</option>
+                <option value="updated_at ASC">Oldest First</option>
+                <option value="credibility_score DESC">Highest Score</option>
+                <option value="credibility_score ASC">Lowest Score</option>
+                <option value="created_at DESC">Recently Created</option>
+            </select>
+        </div>
+
+        <div id="analyses-container">
+            <div class="loading-state">
+                <p>Loading analyses...</p>
+            </div>
+        </div>
+
+        <div class="pagination" id="pagination" style="display: none;">
+            <button class="pagination-btn" id="prev-btn" disabled>Previous</button>
+            <span class="pagination-info" id="pagination-info"></span>
+            <button class="pagination-btn" id="next-btn" disabled>Next</button>
+        </div>
+    </div>
+
+    <script>
+        let currentPage = 1;
+        let totalPages = 1;
+        let currentSort = 'updated_at DESC';
+        let searchQuery = '';
+
+        // Load database stats
+        async function loadStats() {
+            try {
+                const response = await fetch('/api/database/stats');
+                const stats = await response.json();
+                
+                document.getElementById('total-analyses').textContent = stats.total_analyses || 0;
+                document.getElementById('recent-analyses').textContent = stats.recent_analyses || 0;
+                document.getElementById('avg-score').textContent = stats.average_credibility_score || 0;
+            } catch (error) {
+                console.error('Error loading stats:', error);
+            }
+        }
+
+        // Load analyses
+        async function loadAnalyses(page = 1, orderBy = 'updated_at DESC') {
+            try {
+                const params = new URLSearchParams({
+                    page: page,
+                    limit: 20,
+                    order_by: orderBy
+                });
+
+                const response = await fetch(`/api/analyses?${params}`);
+                const data = await response.json();
+                
+                displayAnalyses(data.analyses);
+                updatePagination(data);
+                
+            } catch (error) {
+                console.error('Error loading analyses:', error);
+                document.getElementById('analyses-container').innerHTML = 
+                    '<div class="empty-state"><h3>Error loading analyses</h3><p>Please try again later.</p></div>';
+            }
+        }
+
+        // Display analyses
+        function displayAnalyses(analyses) {
+            const container = document.getElementById('analyses-container');
+            
+            if (analyses.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <h3>No analyses found</h3>
+                        <p>Start by analyzing some content on the <a href="/">main page</a>.</p>
+                    </div>
+                `;
+                return;
+            }
+
+            const analysesGrid = document.createElement('div');
+            analysesGrid.className = 'analyses-grid';
+
+            analyses.forEach(analysis => {
+                const card = createAnalysisCard(analysis);
+                analysesGrid.appendChild(card);
+            });
+
+            container.innerHTML = '';
+            container.appendChild(analysesGrid);
+        }
+
+        // Create analysis card
+        function createAnalysisCard(analysis) {
+            const card = document.createElement('div');
+            card.className = 'analysis-card';
+
+            const credibilityClass = getCredibilityClass(analysis.credibility_score);
+            const formattedDate = new Date(analysis.updated_at).toLocaleDateString();
+            const timeAgo = getTimeAgo(analysis.updated_at);
+
+            card.innerHTML = `
+                <div class="analysis-header">
+                    <div>
+                        <h3 class="analysis-title">${escapeHtml(analysis.title || 'Untitled Analysis')}</h3>
+                        <div class="analysis-url">${escapeHtml(analysis.url)}</div>
+                    </div>
+                    <div class="analysis-type-badge">${analysis.analysis_type}</div>
+                </div>
+                
+                <div class="analysis-meta">
+                    <div class="meta-item">
+                        📅 ${formattedDate}
+                    </div>
+                    <div class="meta-item">
+                        🕒 ${timeAgo}
+                    </div>
+                    ${analysis.credibility_score ? `
+                        <div class="credibility-badge ${credibilityClass}">
+                            Score: ${analysis.credibility_score}/100
+                        </div>
+                    ` : ''}
+                </div>
+
+                <div class="analysis-actions">
+                    <a href="/analysis/${analysis.id}" class="action-btn primary">View Analysis</a>
+                    <button onclick="deleteAnalysis(${analysis.id})" class="action-btn danger">Delete</button>
+                </div>
+            `;
+
+            return card;
+        }
+
+        // Get credibility class
+        function getCredibilityClass(score) {
+            if (!score) return '';
+            if (score >= 70) return 'credibility-high';
+            if (score >= 40) return 'credibility-medium';
+            return 'credibility-low';
+        }
+
+        // Get time ago
+        function getTimeAgo(dateString) {
+            const date = new Date(dateString);
+            const now = new Date();
+            const diffInHours = Math.floor((now - date) / (1000 * 60 * 60));
+            
+            if (diffInHours < 1) return 'Just now';
+            if (diffInHours < 24) return `${diffInHours} hours ago`;
+            
+            const diffInDays = Math.floor(diffInHours / 24);
+            if (diffInDays < 7) return `${diffInDays} days ago`;
+            
+            const diffInWeeks = Math.floor(diffInDays / 7);
+            if (diffInWeeks < 4) return `${diffInWeeks} weeks ago`;
+            
+            const diffInMonths = Math.floor(diffInDays / 30);
+            return `${diffInMonths} months ago`;
+        }
+
+        // Escape HTML
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        // Update pagination
+        function updatePagination(data) {
+            const pagination = document.getElementById('pagination');
+            const prevBtn = document.getElementById('prev-btn');
+            const nextBtn = document.getElementById('next-btn');
+            const paginationInfo = document.getElementById('pagination-info');
+
+            if (data.total_count > 20) {
+                pagination.style.display = 'flex';
+                
+                totalPages = Math.ceil(data.total_count / 20);
+                
+                prevBtn.disabled = currentPage <= 1;
+                nextBtn.disabled = !data.has_more;
+                
+                paginationInfo.textContent = `Page ${currentPage} of ${totalPages} (${data.total_count} total)`;
+            } else {
+                pagination.style.display = 'none';
+            }
+        }
+
+        // Delete analysis
+        async function deleteAnalysis(analysisId) {
+            if (!confirm('Are you sure you want to delete this analysis? This action cannot be undone.')) {
+                return;
+            }
+
+            try {
+                const response = await fetch(`/api/analysis/${analysisId}`, {
+                    method: 'DELETE'
+                });
+
+                if (response.ok) {
+                    // Reload current page
+                    loadAnalyses(currentPage, currentSort);
+                    loadStats();
+                } else {
+                    alert('Failed to delete analysis. Please try again.');
+                }
+            } catch (error) {
+                console.error('Error deleting analysis:', error);
+                alert('Error deleting analysis. Please try again.');
+            }
+        }
+
+        // Event listeners
+        document.getElementById('sort-select').addEventListener('change', (e) => {
+            currentSort = e.target.value;
+            currentPage = 1;
+            loadAnalyses(currentPage, currentSort);
+        });
+
+        document.getElementById('search-input').addEventListener('input', (e) => {
+            searchQuery = e.target.value;
+            // TODO: Implement search functionality
+        });
+
+        document.getElementById('prev-btn').addEventListener('click', () => {
+            if (currentPage > 1) {
+                currentPage--;
+                loadAnalyses(currentPage, currentSort);
+            }
+        });
+
+        document.getElementById('next-btn').addEventListener('click', () => {
+            currentPage++;
+            loadAnalyses(currentPage, currentSort);
+        });
+
+        // Initial load
+        document.addEventListener('DOMContentLoaded', () => {
+            loadStats();
+            loadAnalyses();
+        });
+    </script>
+</body>
+</html> 
